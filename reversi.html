@@ -1,0 +1,402 @@
+<html>
+
+<head>
+
+<style>
+.centered {
+	position: fixed;
+	top: 25%;
+	left: 37%;
+	margin-top: -50px;
+	margin-left: -100px;
+}
+table.center {
+    margin-left:auto;
+    margin-right:auto;
+}
+
+h1 {
+    text-align: center;
+	font-size: 50px;
+	font-family: cursive;
+}
+
+#noMoves,#endGame
+	{
+		display:none;
+	}
+
+
+button {
+    margin-left: 20px;
+	margin-top: 10px;
+	text-align: center;
+	font-size: 20px;
+	font-family: cursive;
+}
+
+</style>
+
+<script>
+
+var board =
+	   [
+		[ 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E' ],
+   		[ 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E' ],
+   		[ 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E' ],
+   		[ 'E', 'E', 'E', 'W', 'B', 'E', 'E', 'E' ],
+   		[ 'E', 'E', 'E', 'B', 'W', 'E', 'E', 'E' ],
+   		[ 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E' ],
+   		[ 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E' ],
+   		[ 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E' ] ];
+
+var moveRow = [ -1, -1, -1,  0,  0,  1,  1,  1 ];
+var moveCol = [ -1,  0,  1, -1,  1, -1,  0,  1 ];
+var piece = 'B';
+var Ps = true;
+var dir = "/images/";
+var player1 = 'B';
+var player2 = 'W';
+
+function oPiece(){
+	var oppPiece;
+	if (piece == 'B')
+		oppPiece = 'W';
+	else oppPiece = 'B';
+	return oppPiece;
+}
+
+function Init(){
+		var i, j, k;
+		k = 0;
+		for(i = 0; i < 8; ++i)
+		for(j = 0; j < 8; ++j){
+			var elem = document.getElementById('field'+k).src = dir + board[i][j] + '.jpg';
+			k++;
+		}
+}
+
+function isValidMove(x, y) {
+	if (board[x][y] != 'E')
+		return false;
+
+	var oppPiece = oPiece();
+	var valid = false;
+
+	var i;
+	for (i = 0; i < 8; ++i) {
+		var curRow = x + moveRow[i];
+		var curCol = y + moveCol[i];
+		var hasOppPieceBetween = false;
+		while (curRow >= 0 && curRow < 8 && curCol >= 0 && curCol < 8) {
+			if (board[curRow][curCol] == oppPiece)
+				hasOppPieceBetween = true;
+			else if ((board[curRow][curCol] == piece) && hasOppPieceBetween)
+			{
+				valid = true;
+				break;
+			}
+			else
+				break;
+
+			curRow += moveRow[i];
+			curCol += moveCol[i];
+		}
+		if (valid)
+			break;
+	}
+	return valid;
+}
+
+function checkMoves(){
+	var i, j;
+	for(i = 0; i < 8; ++i)
+	for(j = 0; j < 8; ++j){
+		if (isValidMove(i, j)){
+			return true;
+		}
+	}
+	document.getElementById('noMoves').style.display = 'block';
+	return false;
+}
+
+function checkWin(){
+	var i, j;
+	var b = 0;
+	var w = 0;
+	for(i = 0; i < 8; ++i)
+	for(j = 0; j < 8; ++j){
+		if (board[i][j] == 'E')
+			return false;
+		if (board[i][j] == 'B')
+			++b;
+		else ++w;
+	}
+
+	document.getElementById('noMoves').style.display = 'none';
+	var str = document.getElementById('endGame').innerHTML;
+	str = str.replace('?w?', w);
+	str = str.replace('?b?', b);
+	document.getElementById('endGame').innerHTML = str;
+	document.getElementById('endGame').style.display = 'block';
+	return true;
+}
+
+function MouseEnter(x, y){
+	var effectPieces = effectMove(x, y);
+	if (effectPieces.length < 1)
+		return;
+	effectPieces.push([x, y]);
+	var i;
+	for (i = 0; i < effectPieces.length; ++i){
+		var x = effectPieces[i][0];
+		var y = effectPieces[i][1];
+		var k = x*8 + y;
+		var elem = document.getElementById('field'+k).src = dir + board[x][y] + 'H.jpg';
+	}
+}
+
+function MouseLeave(x, y){
+		Init();
+}
+
+function effectMove(x, y) {
+	if (!isValidMove(x, y))
+		return [];
+	var pieces = [];
+
+	var i;
+	for (i = 0; i < 8; ++i) {
+		var curRow = x + moveRow[i];
+		var curCol = y + moveCol[i];
+		if (curRow < 0 || curRow >= 8 || curCol < 0 || curCol >= 8 || board[curRow][curCol] == piece)
+			continue;
+
+		var hasOppPieceBetween = false;
+		while (curRow >= 0 && curRow < 8 && curCol >= 0 && curCol < 8) {
+			if (board[curRow][curCol] == 'E')
+				break;
+
+			if (board[curRow][curCol] != piece)
+				hasOppPieceBetween = true;
+
+			if ((board[curRow][curCol] == piece) && hasOppPieceBetween)
+			{
+				var effectPieceRow = x + moveRow[i];
+				var effectPieceCol = y + moveCol[i];
+				while (effectPieceRow != curRow || effectPieceCol != curCol)
+				{
+					pieces.push([effectPieceRow, effectPieceCol]);
+					effectPieceRow += moveRow[i];
+					effectPieceCol += moveCol[i];
+				}
+
+				break;
+			}
+
+			curRow += moveRow[i];
+			curCol += moveCol[i];
+		}
+	}
+
+	return pieces;
+}
+
+function makeMove(x, y){
+
+	var effectPieces = effectMove(x, y);
+
+	if (effectPieces.length < 1)
+		return;
+
+	var oppPiece = oPiece();
+
+	effectPieces.unshift([x, y]);
+	var i;
+	for (i = 0; i < effectPieces.length; ++i){
+		var x = effectPieces[i][0];
+		var y = effectPieces[i][1];
+		var k = x*8 + y;
+		document.getElementById('field'+k).src = dir + piece + '.jpg';
+		board[x][y] = piece;
+	}
+}
+
+function playerMove(x, y){
+	makeMove(x,y);
+	piece = oPiece();
+}
+
+function psMove(){
+
+	var str_board = "";
+	for(i = 0; i < 8; ++i)
+	for(j = 0; j < 8; ++j)
+		str_board += board[i][j];
+
+	fetch("/echo/" + str_board + "W",
+	{
+	    method: "GET"
+	})
+	.then(function(response) {
+	  return response.text();
+	})
+	.then(function(text) {
+	  console.log('Request successful', text);
+	  var x = parseInt(text[0]);
+	  var y = parseInt(text[1]);
+
+	  if (x == -1 || y == -1){
+		  piece = oPiece();
+	  	  return;
+	  }
+	  makeMove(x,y);
+	  piece = oPiece();
+
+	})
+	.catch(function(error) {
+	  log('Request failed', error)
+	});
+}
+
+function Click(x, y){
+
+	playerMove(x, y);
+
+	var f1 = checkMoves();
+	var f2 = checkWin();
+
+	if (!f1 || f2)
+		return;
+
+	if (!Ps)
+		return;
+
+	psMove();
+
+	var f1 = checkMoves();
+	var f2 = checkWin();
+}
+
+function ClickNoMoves(){
+	if (Ps && piece == player1){
+		piece = player2;
+		psMove();
+	}
+	else
+	if (piece == player1)
+		piece = player2;
+	else piece = player1;
+
+	document.getElementById('noMoves').style.display = 'none';
+}
+
+</script>
+
+</head>
+
+<body>
+<div><h1> Reversi </h1></div>
+
+<br>
+
+<div>
+<table align="center"><tbody>
+<tr>
+<td><img id="field0" alt=""onmouseover="MouseEnter(0, 0);" onclick="Click(0, 0);" onmouseout="MouseLeave(0, 0);"></td>
+<td><img id="field1"  alt=""onmouseover="MouseEnter(0, 1);" onclick="Click(0, 1);" onmouseout="MouseLeave(0, 1);"></td>
+<td><img id="field2"  alt="" onmouseover="MouseEnter(0, 2);" onclick="Click(0, 2);" onmouseout="MouseLeave(0, 2);"></td>
+<td><img id="field3"  alt="" onmouseover="MouseEnter(0, 3);" onclick="Click(0, 3);" onmouseout="MouseLeave(0, 3);"></td>
+<td><img id="field4"  alt="" onmouseover="MouseEnter(0, 4);" onclick="Click(0, 4);" onmouseout="MouseLeave(0, 4);"></td>
+<td><img id="field5"  alt="" onmouseover="MouseEnter(0, 5);" onclick="Click(0, 5);" onmouseout="MouseLeave(0, 5);"></td>
+<td><img id="field6"  alt="" onmouseover="MouseEnter(0, 6);" onclick="Click(0, 6);" onmouseout="MouseLeave(0, 6);"></td>
+<td><img id="field7"  alt="" onmouseover="MouseEnter(0, 7);" onclick="Click(0, 7);" onmouseout="MouseLeave(0, 7);"></td>
+</tr>
+<tr><td><img id="field8"  alt="" onmouseover="MouseEnter(1, 0);" onclick="Click(1, 0);" onmouseout="MouseLeave(1, 0);"></td>
+<td><img id="field9"  alt="" onmouseover="MouseEnter(1, 1);" onclick="Click(1, 1);" onmouseout="MouseLeave(1, 1);"></td>
+<td><img id="field10"  alt="" onmouseover="MouseEnter(1, 2);" onclick="Click(1, 2);" onmouseout="MouseLeave(1, 2);"></td>
+<td><img id="field11"  alt="" onmouseover="MouseEnter(1, 3);" onclick="Click(1, 3);" onmouseout="MouseLeave(1, 3);"></td>
+<td><img id="field12"  alt="" onmouseover="MouseEnter(1, 4);" onclick="Click(1, 4);" onmouseout="MouseLeave(1, 4);"></td>
+<td><img id="field13"  alt="" onmouseover="MouseEnter(1, 5);" onclick="Click(1, 5);" onmouseout="MouseLeave(1, 5);"></td>
+<td><img id="field14"  alt="" onmouseover="MouseEnter(1, 6);" onclick="Click(1, 6);" onmouseout="MouseLeave(1, 6);"></td>
+<td><img id="field15"  alt="" onmouseover="MouseEnter(1, 7);" onclick="Click(1, 7);" onmouseout="MouseLeave(1, 7);"></td>
+</tr>
+<tr><td><img id="field16"  alt="" onmouseover="MouseEnter(2, 0);" onclick="Click(2, 0);" onmouseout="MouseLeave(2, 0);"></td>
+<td><img id="field17"  alt="" onmouseover="MouseEnter(2, 1);" onclick="Click(2, 1);" onmouseout="MouseLeave(2, 1);"></td>
+<td><img id="field18"  alt="" onmouseover="MouseEnter(2, 2);" onclick="Click(2, 2);" onmouseout="MouseLeave(2, 2);"></td>
+<td><img id="field19"  alt="" onmouseover="MouseEnter(2, 3);" onclick="Click(2, 3);" onmouseout="MouseLeave(2, 3);"></td>
+<td><img id="field20"  alt="" onmouseover="MouseEnter(2, 4);" onclick="Click(2, 4);" onmouseout="MouseLeave(2, 4);"></td>
+<td><img id="field21"  alt="" onmouseover="MouseEnter(2, 5);" onclick="Click(2, 5);" onmouseout="MouseLeave(2, 5);"></td>
+<td><img id="field22"  alt="" onmouseover="MouseEnter(2, 6);" onclick="Click(2, 6);" onmouseout="MouseLeave(2, 6);"></td>
+<td><img id="field23"  alt="" onmouseover="MouseEnter(2, 7);" onclick="Click(2, 7);" onmouseout="MouseLeave(2, 7);"></td>
+</tr>
+<tr><td><img id="field24"  alt="" onmouseover="MouseEnter(3, 0);" onclick="Click(3, 0);" onmouseout="MouseLeave(3, 0);"></td>
+<td><img id="field25"  alt="" onmouseover="MouseEnter(3, 1);" onclick="Click(3, 1);" onmouseout="MouseLeave(3, 1);"></td>
+<td><img id="field26"  alt="" onmouseover="MouseEnter(3, 2);" onclick="Click(3, 2);" onmouseout="MouseLeave(3, 2);"></td>
+<td><img id="field27"  alt="" onmouseover="MouseEnter(3, 3);" onclick="Click(3, 3);" onmouseout="MouseLeave(3, 3);"></td>
+<td><img id="field28"  alt="" onmouseover="MouseEnter(3, 4);" onclick="Click(3, 4);" onmouseout="MouseLeave(3, 4);"></td>
+<td><img id="field29"  alt="" onmouseover="MouseEnter(3, 5);" onclick="Click(3, 5);" onmouseout="MouseLeave(3, 5);"></td>
+<td><img id="field30"  alt="" onmouseover="MouseEnter(3, 6);" onclick="Click(3, 6);" onmouseout="MouseLeave(3, 6);"></td>
+<td><img id="field31"  alt="" onmouseover="MouseEnter(3, 7);" onclick="Click(3, 7);" onmouseout="MouseLeave(3, 7);"></td>
+</tr>
+<tr><td><img id="field32"  alt="" onmouseover="MouseEnter(4, 0);" onclick="Click(4, 0);" onmouseout="MouseLeave(4, 0);"></td>
+<td><img id="field33"  alt="" onmouseover="MouseEnter(4, 1);" onclick="Click(4, 1);" onmouseout="MouseLeave(4, 1);"></td>
+<td><img id="field34"  alt="" onmouseover="MouseEnter(4, 2);" onclick="Click(4, 2);" onmouseout="MouseLeave(4, 2);"></td>
+<td><img id="field35"  alt="" onmouseover="MouseEnter(4, 3);" onclick="Click(4, 3);" onmouseout="MouseLeave(4, 3);"></td>
+<td><img id="field36"  alt="" onmouseover="MouseEnter(4, 4);" onclick="Click(4, 4);" onmouseout="MouseLeave(4, 4);"></td>
+<td><img id="field37"  alt="" onmouseover="MouseEnter(4, 5);" onclick="Click(4, 5);" onmouseout="MouseLeave(4, 5);"></td>
+<td><img id="field38"  alt="" onmouseover="MouseEnter(4, 6);" onclick="Click(4, 6);" onmouseout="MouseLeave(4, 6);"></td>
+<td><img id="field39"  alt="" onmouseover="MouseEnter(4, 7);" onclick="Click(4, 7);" onmouseout="MouseLeave(4, 7);"></td>
+</tr>
+<tr><td><img id="field40"  alt="" onmouseover="MouseEnter(5, 0);" onclick="Click(5, 0);" onmouseout="MouseLeave(5, 0);"></td>
+<td><img id="field41"  alt="" onmouseover="MouseEnter(5, 1);" onclick="Click(5, 1);" onmouseout="MouseLeave(5, 1);"></td>
+<td><img id="field42"  alt="" onmouseover="MouseEnter(5, 2);" onclick="Click(5, 2);" onmouseout="MouseLeave(5, 2);"></td>
+<td><img id="field43"  alt="" onmouseover="MouseEnter(5, 3);" onclick="Click(5, 3);" onmouseout="MouseLeave(5, 3);"></td>
+<td><img id="field44"  alt="" onmouseover="MouseEnter(5, 4);" onclick="Click(5, 4);" onmouseout="MouseLeave(5, 4);"></td>
+<td><img id="field45"  alt="" onmouseover="MouseEnter(5, 5);" onclick="Click(5, 5);" onmouseout="MouseLeave(5, 5);"></td>
+<td><img id="field46"  alt="" onmouseover="MouseEnter(5, 6);" onclick="Click(5, 6);" onmouseout="MouseLeave(5, 6);"></td>
+<td><img id="field47"  alt="" onmouseover="MouseEnter(5, 7);" onclick="Click(5, 7);" onmouseout="MouseLeave(5, 7);"></td>
+</tr>
+<tr><td><img id="field48"  alt="" onmouseover="MouseEnter(6, 0);" onclick="Click(6, 0);" onmouseout="MouseLeave(6, 0);"></td>
+<td><img id="field49"  alt="" onmouseover="MouseEnter(6, 1);" onclick="Click(6, 1);" onmouseout="MouseLeave(6, 1);"></td>
+<td><img id="field50"  alt="" onmouseover="MouseEnter(6, 2);" onclick="Click(6, 2);" onmouseout="MouseLeave(6, 2);"></td>
+<td><img id="field51"  alt="" onmouseover="MouseEnter(6, 3);" onclick="Click(6, 3);" onmouseout="MouseLeave(6, 3);"></td>
+<td><img id="field52"  alt="" onmouseover="MouseEnter(6, 4);" onclick="Click(6, 4);" onmouseout="MouseLeave(6, 4);"></td>
+<td><img id="field53"  alt="" onmouseover="MouseEnter(6, 5);" onclick="Click(6, 5);" onmouseout="MouseLeave(6, 5);"></td>
+<td><img id="field54"  alt="" onmouseover="MouseEnter(6, 6);" onclick="Click(6, 6);" onmouseout="MouseLeave(6, 6);"></td>
+<td><img id="field55"  alt="" onmouseover="MouseEnter(6, 7);" onclick="Click(6, 7);" onmouseout="MouseLeave(6, 7);"></td>
+</tr>
+<tr><td><img id="field56"  alt="" onmouseover="MouseEnter(7, 0);" onclick="Click(7, 0);" onmouseout="MouseLeave(7, 0);"></td>
+<td><img id="field57"  alt="" onmouseover="MouseEnter(7, 1);" onclick="Click(7, 1);" onmouseout="MouseLeave(7, 1);"></td>
+<td><img id="field58"  alt="" onmouseover="MouseEnter(7, 2);" onclick="Click(7, 2);" onmouseout="MouseLeave(7, 2);"></td>
+<td><img id="field59"  alt="" onmouseover="MouseEnter(7, 3);" onclick="Click(7, 3);" onmouseout="MouseLeave(7, 3);"></td>
+<td><img id="field60"  alt="" onmouseover="MouseEnter(7, 4);" onclick="Click(7, 4);" onmouseout="MouseLeave(7, 4);"></td>
+<td><img id="field61"  alt="" onmouseover="MouseEnter(7, 5);" onclick="Click(7, 5);" onmouseout="MouseLeave(7, 5);"></td>
+<td><img id="field62"  alt="" onmouseover="MouseEnter(7, 6);" onclick="Click(7, 6);" onmouseout="MouseLeave(7, 6);"></td>
+<td><img id="field63"  alt="" onmouseover="MouseEnter(7, 7);" onclick="Click(7, 7);" onmouseout="MouseLeave(7, 7);"></td>
+</tr>
+</tbody></table>
+</div>
+
+<br>
+<div id='noMoves'>
+	<h1 style = 'font-size: 20px;'>There are no moves :(
+		<button onclick="ClickNoMoves();" > Next Player</button>
+	</h1>
+</div>
+
+<div id='endGame'>
+	<h1 style = 'font-size: 20px;'> The End! Black: ?b?; White: ?w? </h1>
+</div>
+
+<script language="javascript" type="TEXT/JAVASCRIPT">
+	Init();
+	checkMoves();
+	checkWin();
+</script>
+
+</body>
+
+
+
+</html>
